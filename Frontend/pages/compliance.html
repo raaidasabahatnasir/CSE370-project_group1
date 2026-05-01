@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Safe Score</title>
+<link rel="stylesheet" href="/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+
+<div class="header"><h1>Safe Score</h1></div>
+
+<div class="navbar">
+<a href="/">Overview</a>
+<a href="/workers">Worker Density</a>
+<a href="/incidents">Risk Scoring</a>
+<a href="/accidents">Accidents</a>
+<a href="/compliance" class="active">Compliance</a>
+<a href="/emergency">Safe Spots</a>
+<a href="/training">Training</a>
+</div>
+
+<div class="card">
+<h3>Risk Score</h3>
+<div id="risk">Loading safety metrics...</div>
+</div>
+
+</div>
+
+<script>
+axios.get("http://localhost:3000/compliance/risk")
+.then(res => {
+  const data = res.data;
+
+  document.getElementById("risk").innerHTML = `
+    <h2 style="font-size: 32px; margin: 20px 0;">${data.score} / 100</h2>
+
+    <div class="section">
+      <p>Fire Safety</p>
+      <div class="progress">
+        <div class="progress-bar green" style="width:${data.details.fireSafety}%"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <p>Worker Safety</p>
+      <div class="progress">
+        <div class="progress-bar blue" style="width:${data.details.workerSafety}%"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <p>Equipment</p>
+      <div class="progress">
+        <div class="progress-bar red" style="width:${data.details.equipment}%"></div>
+      </div>
+    </div>
+  `;
+})
+.catch(err => {
+  document.getElementById("risk").innerHTML = `<p style="color:red">Error loading data. Make sure the backend is running.</p>`;
+});
+</script>
+</body>
+</html>

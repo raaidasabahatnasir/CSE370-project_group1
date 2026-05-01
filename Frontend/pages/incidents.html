@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Risk Scoring - Garment Factory Safety</title>
+
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+<style>
+:root {
+  --bg: #0f172a;
+  --card: #1e293b;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --border: #334155;
+  --blue: #3b82f6;
+  --green: #10b981;
+  --red: #ef4444;
+  --yellow: #f59e0b;
+  --low-risk: #064e3b30;
+  --med-risk: #78350f30;
+  --high-risk: #450a0a30;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Inter', sans-serif;
+}
+
+body {
+  background: var(--bg);
+  padding: 40px;
+  color: var(--text-main);
+}
+
+.container {
+  max-width: 1200px;
+  margin: auto;
+}
+
+/* Header */
+.header {
+  margin-bottom: 30px;
+}
+
+.header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.header p {
+  color: var(--text-muted);
+  font-size: 16px;
+}
+
+/* Navbar */
+.navbar {
+  display: flex;
+  background: #1e293b;
+  padding: 5px;
+  border-radius: 12px;
+  margin-bottom: 40px;
+  gap: 5px;
+  border: 1px solid var(--border);
+}
+
+.navbar a {
+  flex: 1;
+  text-decoration: none;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 10px;
+  text-align: center;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.navbar a.active {
+  background: #334155;
+  color: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Section */
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.section-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 25px;
+}
+
+/* Risk Card */
+.risk-card {
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+
+.risk-card.low { background: var(--low-risk); border-color: #10b98120; }
+.risk-card.medium { background: var(--med-risk); border-color: #f59e0b20; }
+
+.risk-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.floor-title h4 {
+  font-size: 18px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  background: #334155;
+}
+
+.badge.low { color: var(--green); border: 1px solid #10b98140; }
+.badge.medium { color: var(--yellow); border: 1px solid #f59e0b40; }
+
+.risk-trend {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+.risk-score-display {
+  text-align: right;
+}
+
+.score-trend {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.score-trend.down { color: var(--green); }
+.score-trend.up { color: var(--yellow); }
+
+.score-label {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* Progress Bar */
+.risk-progress {
+  height: 6px;
+  background: #334155;
+  border-radius: 3px;
+  margin-bottom: 25px;
+  overflow: hidden;
+}
+
+.risk-progress-bar {
+  height: 100%;
+}
+
+.risk-progress-bar.low { background: var(--green); }
+.risk-progress-bar.medium { background: var(--yellow); }
+
+/* Grid of metrics */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.metric-item h5 {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.metric-value {
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.critical-tag {
+  background: var(--red);
+  color: white;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.metric-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* Methodology */
+.method-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  margin-top: 40px;
+}
+
+.method-item {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--text-muted);
+  align-items: center;
+}
+
+.method-icon {
+  width: 16px;
+  height: 16px;
+  color: #94a3b8;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>Garment Factory Safety Management</h1>
+    <p>Monitor worker safety, compliance, and risk across all facilities</p>
+  </div>
+
+  <!-- Navbar -->
+  <div class="navbar">
+    <a href="/">Overview</a>
+    <a href="/workers">Worker Density</a>
+    <a href="/incidents" class="active">Risk Scoring</a>
+    <a href="/accidents">Accidents</a>
+    <a href="/compliance">Compliance</a>
+    <a href="/emergency">Safe Spots</a>
+    <a href="/training">Training</a>
+  </div>
+
+  <div class="section-title">Floor Risk Assessment</div>
+  <div class="section-subtitle">Risk scores calculated based on compliance, accidents, and overcrowding per department</div>
+
+  <!-- Ground Floor -->
+  <div class="risk-card low">
+    <div class="risk-card-header">
+      <div class="floor-title">
+        <h4>Ground Floor - Cutting Department <span class="badge low">Low Risk</span></h4>
+        <p class="risk-trend">Risk trend: Stable</p>
+      </div>
+      <div class="risk-score-display">
+        <div class="score-trend" id="score-0">10</div>
+        <div class="score-label">Risk Score</div>
+      </div>
+    </div>
+    <div class="risk-progress">
+      <div class="risk-progress-bar low" style="width: 10%;"></div>
+    </div>
+    <div class="metrics-grid" style="grid-template-columns: repeat(3, 1fr);">
+      <div class="metric-item">
+        <h5>Pending Compliance</h5>
+        <div class="metric-value">1</div>
+        <div class="metric-desc">Issues overdue</div>
+      </div>
+      <div class="metric-item">
+        <h5>Past Accidents</h5>
+        <div class="metric-value">0</div>
+        <div class="metric-desc">Last 12 months</div>
+      </div>
+      <div class="metric-item">
+        <h5>Overcrowding</h5>
+        <div class="metric-value">0</div>
+        <div class="metric-desc">Incidents recorded</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- First Floor -->
+  <div class="risk-card medium">
+    <div class="risk-card-header">
+      <div class="floor-title">
+        <h4>First Floor - Sewing Department <span class="badge medium">Medium Risk</span></h4>
+        <p class="risk-trend">Risk trend: High Priority</p>
+      </div>
+      <div class="risk-score-display">
+        <div class="score-trend" id="score-1">30</div>
+        <div class="score-label">Risk Score</div>
+      </div>
+    </div>
+    <div class="risk-progress">
+      <div class="risk-progress-bar medium" style="width: 30%;"></div>
+    </div>
+    <div class="metrics-grid" style="grid-template-columns: repeat(3, 1fr);">
+      <div class="metric-item">
+        <h5>Pending Compliance</h5>
+        <div class="metric-value">1</div>
+        <div class="metric-desc">Issues overdue</div>
+      </div>
+      <div class="metric-item">
+        <h5>Past Accidents</h5>
+        <div class="metric-value">1</div>
+        <div class="metric-desc">Last 12 months</div>
+      </div>
+      <div class="metric-item">
+        <h5>Overcrowding</h5>
+        <div class="metric-value">1</div>
+        <div class="metric-desc">Incidents recorded</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Second Floor -->
+  <div class="risk-card low">
+    <div class="risk-card-header">
+      <div class="floor-title">
+        <h4>Second Floor - Finishing Department <span class="badge low">Low Risk</span></h4>
+        <p class="risk-trend">Risk trend: Stable</p>
+      </div>
+      <div class="risk-score-display">
+        <div class="score-trend" id="score-2">20</div>
+        <div class="score-label">Risk Score</div>
+      </div>
+    </div>
+    <div class="risk-progress">
+      <div class="risk-progress-bar low" style="width: 20%;"></div>
+    </div>
+    <div class="metrics-grid" style="grid-template-columns: repeat(3, 1fr);">
+      <div class="metric-item">
+        <h5>Pending Compliance</h5>
+        <div class="metric-value">1</div>
+        <div class="metric-desc">Issues overdue</div>
+      </div>
+      <div class="metric-item">
+        <h5>Past Accidents</h5>
+        <div class="metric-value">1</div>
+        <div class="metric-desc">Last 12 months</div>
+      </div>
+      <div class="metric-item">
+        <h5>Overcrowding</h5>
+        <div class="metric-value">0</div>
+        <div class="metric-desc">Incidents recorded</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Third Floor -->
+  <div class="risk-card low">
+    <div class="risk-card-header">
+      <div class="floor-title">
+        <h4>Third Floor - Packaging & Storage <span class="badge low">Low Risk</span></h4>
+        <p class="risk-trend">Risk trend: Stable</p>
+      </div>
+      <div class="risk-score-display">
+        <div class="score-trend" id="score-3">10</div>
+        <div class="score-label">Risk Score</div>
+      </div>
+    </div>
+    <div class="risk-progress">
+      <div class="risk-progress-bar low" style="width: 10%;"></div>
+    </div>
+    <div class="metrics-grid" style="grid-template-columns: repeat(3, 1fr);">
+      <div class="metric-item">
+        <h5>Pending Compliance</h5>
+        <div class="metric-value">1</div>
+        <div class="metric-desc">Issues overdue</div>
+      </div>
+      <div class="metric-item">
+        <h5>Past Accidents</h5>
+        <div class="metric-value">0</div>
+        <div class="metric-desc">Last 12 months</div>
+      </div>
+      <div class="metric-item">
+        <h5>Overcrowding</h5>
+        <div class="metric-value">0</div>
+        <div class="metric-desc">Incidents recorded</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Methodology -->
+  <div class="method-card">
+    <div class="section-title" style="margin-bottom: 20px;">Risk Score Methodology</div>
+    
+    <div class="method-item">
+      <div class="method-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path></svg></div>
+      <span>Pending Compliance Issues: Each overdue compliance issue adds **10 points** to the risk score.</span>
+    </div>
+
+    <div class="method-item">
+      <div class="method-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path></svg></div>
+      <span>Past Accident Records: Each recorded accident within the last 12 months adds **10 points**.</span>
+    </div>
+
+    <div class="method-item">
+      <div class="method-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path></svg></div>
+      <span>Overcrowding Incidents: Each instance of exceeding worker capacity adds **10 points**.</span>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+  // Add logout logic
+  if (!localStorage.getItem('token')) window.location.href = '/auth/login';
+</script>
+
+</body>
+</html>

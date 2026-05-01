@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Worker Density - Garment Factory Safety</title>
+
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+:root {
+  --bg: #0f172a;
+  --card: #1e293b;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --border: #334155;
+  --blue: #3b82f6;
+  --green: #10b981;
+  --red: #ef4444;
+  --yellow: #f59e0b;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Inter', sans-serif;
+}
+
+body {
+  background: var(--bg);
+  padding: 40px;
+  color: var(--text-main);
+}
+
+.container {
+  max-width: 1200px;
+  margin: auto;
+}
+
+/* Header */
+.header {
+  margin-bottom: 30px;
+}
+
+.header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.header p {
+  color: var(--text-muted);
+  font-size: 16px;
+}
+
+/* Navbar */
+.navbar {
+  display: flex;
+  background: #1e293b;
+  padding: 5px;
+  border-radius: 12px;
+  margin-bottom: 40px;
+  gap: 5px;
+  border: 1px solid var(--border);
+}
+
+.navbar a {
+  flex: 1;
+  text-decoration: none;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 10px;
+  text-align: center;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.navbar a.active {
+  background: #334155;
+  color: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Alert */
+.alert-banner {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 30px;
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.alert-banner .icon {
+  color: var(--red);
+}
+
+.alert-banner .content h4 {
+  font-size: 13px;
+  color: var(--red);
+  font-weight: 700;
+}
+
+.alert-banner .content p {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Card */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 30px;
+  margin-bottom: 30px;
+}
+
+.card-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.card-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 25px;
+}
+
+/* Floor Capacity Section */
+.floor-status-item {
+  margin-bottom: 25px;
+}
+
+.floor-status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 10px;
+}
+
+.floor-meta h4 {
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.floor-meta p {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.badge.safe {
+  border: 1px solid #10b98150;
+  color: var(--green);
+}
+
+.badge.overcrowded {
+  background: var(--red);
+  color: white;
+}
+
+.floor-stats {
+  text-align: right;
+}
+
+.floor-stats .percent {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.floor-stats .count {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.progress-container {
+  height: 8px;
+  background: #334155;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress-bar {
+  height: 100%;
+  border-radius: 4px;
+}
+
+.progress-bar.safe { background: var(--green); }
+.progress-bar.overcrowded { background: var(--red); }
+
+.capacity-warning {
+  font-size: 12px;
+  color: var(--red);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>Garment Factory Safety Management</h1>
+    <p>Monitor worker safety, compliance, and risk across all facilities</p>
+  </div>
+
+  <!-- Navbar -->
+  <div class="navbar">
+    <a href="/">Overview</a>
+    <a href="/workers" class="active">Worker Density</a>
+    <a href="/incidents">Risk Scoring</a>
+    <a href="/accidents">Accidents</a>
+    <a href="/compliance">Compliance</a>
+    <a href="/emergency">Safe Spots</a>
+    <a href="/training">Training</a>
+  </div>
+
+  <!-- Overcrowding Alert -->
+  <div class="alert-banner" id="overcrowdingAlert" style="display: none;">
+    <div class="icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+    </div>
+    <div class="content">
+      <h4>Overcrowding Detected</h4>
+      <p id="alertText">Loading floor status...</p>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 30px;">
+    <!-- Chart Card -->
+    <div class="card">
+      <div class="card-title">Worker Density by Floor</div>
+      <div class="card-subtitle">Current worker count vs. legally permitted capacity per floor</div>
+      <div style="height: 300px; width: 100%;">
+        <canvas id="densityChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Add Worker Card -->
+    <div class="card">
+      <div class="card-title">Add New Worker</div>
+      <div class="card-subtitle">Register a worker to a specific floor</div>
+      
+      <form id="addWorkerForm">
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; font-size: 12px; margin-bottom: 5px; color: var(--text-muted);">Worker Name</label>
+          <input type="text" id="wName" required style="width: 100%; background: #0f172a; border: 1px solid var(--border); color: white; padding: 10px; border-radius: 8px;">
+        </div>
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; font-size: 12px; margin-bottom: 5px; color: var(--text-muted);">Worker ID</label>
+          <input type="text" id="wId" required placeholder="GF-1001" style="width: 100%; background: #0f172a; border: 1px solid var(--border); color: white; padding: 10px; border-radius: 8px;">
+        </div>
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; font-size: 12px; margin-bottom: 5px; color: var(--text-muted);">Floor Assignment</label>
+          <select id="wFloor" required style="width: 100%; background: #0f172a; border: 1px solid var(--border); color: white; padding: 10px; border-radius: 8px;">
+            <option value="">Select Floor</option>
+          </select>
+        </div>
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; font-size: 12px; margin-bottom: 5px; color: var(--text-muted);">Phone Number</label>
+          <input type="text" id="wPhone" placeholder="+880..." style="width: 100%; background: #0f172a; border: 1px solid var(--border); color: white; padding: 10px; border-radius: 8px;">
+        </div>
+        <button type="submit" style="width: 100%; background: var(--blue); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer;">Add Worker</button>
+      </form>
+      <div id="formMsg" style="margin-top: 10px; font-size: 12px; display: none;"></div>
+    </div>
+  </div>
+
+  <!-- Capacity Status List -->
+  <div class="card">
+    <div class="card-title">Floor Capacity Status</div>
+    <div class="card-subtitle">Real-time worker density monitoring by department</div>
+
+    <div id="floorStatusList">
+      <!-- Dynamic Content -->
+    </div>
+  </div>
+
+</div>
+
+<script>
+// Auth Check
+if (!localStorage.getItem('token')) window.location.href = '/auth/login';
+
+let densityChart = null;
+
+async function loadPageData() {
+  try {
+    // Fetch Floors
+    const floorsRes = await axios.get('http://localhost:3000/floors');
+    const floors = floorsRes.data;
+    
+    const floorSelect = document.getElementById('wFloor');
+    floorSelect.innerHTML = '<option value="">Select Floor</option>';
+    floors.forEach(f => {
+      floorSelect.innerHTML += `<option value="${f.id}">${f.name} (${f.department})</option>`;
+    });
+
+    // Fetch Density Data
+    const densityRes = await axios.get('http://localhost:3000/floors/density');
+    const data = densityRes.data;
+
+    updateChart(data);
+    updateFloorList(data);
+    updateAlerts(data);
+
+  } catch (err) {
+    console.error("Failed to load data", err);
+  }
+}
+
+function updateChart(data) {
+  const ctx = document.getElementById('densityChart').getContext('2d');
+  
+  if (densityChart) densityChart.destroy();
+
+  densityChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: data.map(d => d.floor),
+      datasets: [
+        {
+          label: 'Workers',
+          data: data.map(d => d.current_workers),
+          backgroundColor: '#3b82f6',
+          borderRadius: 4,
+        },
+        {
+          label: 'Capacity',
+          data: data.map(d => d.capacity),
+          backgroundColor: '#334155',
+          borderRadius: 4,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { color: '#94a3b8', usePointStyle: true }
+        }
+      },
+      scales: {
+        y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
+        x: { ticks: { color: '#94a3b8' } }
+      }
+    }
+  });
+}
+
+function updateFloorList(data) {
+  const list = document.getElementById('floorStatusList');
+  list.innerHTML = '';
+
+  data.forEach(d => {
+    const isOver = d.current_workers > d.capacity;
+    const percent = Math.round((d.current_workers / d.capacity) * 100);
+    
+    list.innerHTML += `
+      <div class="floor-status-item">
+        <div class="floor-status-header">
+          <div class="floor-meta">
+            <h4>${d.floor} <span class="badge ${isOver ? 'overcrowded' : 'safe'}">${isOver ? 'Overcrowded' : 'Safe'}</span></h4>
+          </div>
+          <div class="floor-stats">
+            <div class="percent" style="color: ${isOver ? 'var(--red)' : 'var(--green)'}">${percent}%</div>
+            <div class="count">${d.current_workers} / ${d.capacity}</div>
+          </div>
+        </div>
+        <div class="progress-container">
+          <div class="progress-bar ${isOver ? 'overcrowded' : 'safe'}" style="width: ${Math.min(percent, 100)}%;"></div>
+        </div>
+        ${isOver ? `
+          <div class="capacity-warning">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            Exceeds capacity by ${d.current_workers - d.capacity} workers
+          </div>
+        ` : ''}
+      </div>
+    `;
+  });
+}
+
+function updateAlerts(data) {
+  const overcrowded = data.filter(d => d.current_workers > d.capacity);
+  const alertEl = document.getElementById('overcrowdingAlert');
+  if (overcrowded.length > 0) {
+    alertEl.style.display = 'flex';
+    document.getElementById('alertText').textContent = `${overcrowded.length} floor(s) exceeded capacity limits. Immediate action required.`;
+  } else {
+    alertEl.style.display = 'none';
+  }
+}
+
+// Add Worker Form Submission
+document.getElementById('addWorkerForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('formMsg');
+  msg.style.display = 'block';
+  msg.style.color = 'var(--text-muted)';
+  msg.textContent = 'Adding worker...';
+
+  const payload = {
+    name: document.getElementById('wName').value,
+    workerid: document.getElementById('wId').value,
+    floor_id: document.getElementById('wFloor').value,
+    phonenumber: document.getElementById('wPhone').value
+  };
+
+  try {
+    const res = await axios.post('http://localhost:3000/workers/api/add', payload);
+    msg.textContent = 'Worker added successfully!';
+    msg.style.color = 'var(--green)';
+    document.getElementById('addWorkerForm').reset();
+    loadPageData(); // Refresh data
+  } catch (err) {
+    msg.textContent = err.response?.data?.error || 'Failed to add worker';
+    msg.style.color = 'var(--red)';
+  }
+});
+
+loadPageData();
+</script>
+
+</body>
+</html>
+
+</body>
+</html>
