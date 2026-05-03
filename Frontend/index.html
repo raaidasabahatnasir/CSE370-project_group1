@@ -393,8 +393,8 @@ body {
           const isOver = d.current_workers > d.capacity;
           const percent = Math.round(d.density);
           
-          // New Risk Score Logic: 10 (Base Compliance) + 10 (If Overcrowded)
-          const floorRisk = 10 + (isOver ? 10 : 0);
+          // New Risk Score Logic: 0 (Base Compliance) + 10 (If Overcrowded)
+          const floorRisk = (isOver ? 10 : 0);
           totalRiskPoints += floorRisk; 
           
           // Add to table
