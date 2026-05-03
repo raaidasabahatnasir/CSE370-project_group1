@@ -1,34 +1,234 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-<title>Safe Spots</title>
-<link rel="stylesheet" href="/css/style.css">
+    <title>Safe Spots</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 12px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            background: #0f172a;
+            border: 1px solid var(--border);
+            padding: 10px;
+            border-radius: 10px;
+            color: white;
+            outline: none;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-top: 16px;
+        }
+
+        .spot-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            font-size: 13px;
+        }
+
+        .spot-table th,
+        .spot-table td {
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .spot-table th {
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+    </style>
 </head>
+
 <body>
 
-<div class="container">
+    <div class="container">
 
-<div class="header"><h1>Safe Spots</h1></div>
+        <div class="header">
+            <h1>Safe Spots</h1>
+        </div>
 
-<div class="navbar">
-<a href="/">Overview</a>
-<a href="/workers">Worker Density</a>
-<a href="/incidents">Risk Scoring</a>
-<a href="/accidents">Accidents</a>
-<a href="/compliance">Compliance</a>
-<a href="/emergency" class="active">Safe Spots</a>
-<a href="/training">Training</a>
-</div>
+        <div class="navbar">
+            <a href="/">Overview</a>
+            <a href="/workers">Worker Density</a>
+            <a href="/incidents">Risk Scoring</a>
+            <a href="/accidents">Accidents</a>
+            <a href="/compliance">Compliance</a>
+            <a href="/emergency" class="active">Safe Spots</a>
+            <a href="/training">Training</a>
+        </div>
 
-<div class="card">
-<h3>Emergency Assembly Points</h3>
-<p>List of safe spots and assembly points in the factory.</p>
+        <div class="card">
+            <h3>Active Safe Spot</h3>
+            <div id="activeSpot" style="color: var(--text-muted);">No recent accidents.</div>
+        </div>
 
-<div class="list-item">Assembly Point A - Ground Floor</div>
-<div class="list-item">Assembly Point B - Roof Top</div>
+        <div class="card">
+            <h3>Assign Safe Spot to Floor</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="floorSelect">Floor</label>
+                    <select id="floorSelect"></select>
+                </div>
+                <div class="form-group">
+                    <label for="spotLocation">Safe Spot Location</label>
+                    <input id="spotLocation" type="text" placeholder="e.g., Assembly Point A">
+                </div>
+            </div>
+            <div class="form-group" style="margin-top: 12px;">
+                <label for="spotInstructions">Instructions (optional)</label>
+                <textarea id="spotInstructions" rows="3" placeholder="Evacuation notes or guidance"></textarea>
+            </div>
+            <div class="form-actions">
+                <button class="btn-primary" id="saveSpotBtn" type="button">Save Safe Spot</button>
+                <div id="spotStatus" style="font-size: 13px; color: var(--text-muted);"></div>
+            </div>
+        </div>
 
-</div>
+        <div class="card">
+            <h3>Safe Spots by Floor</h3>
+            <div id="spotList"></div>
+        </div>
 
-</div>
+    </div>
+
+    <script>
+        const floorSelect = document.getElementById('floorSelect');
+        const spotStatus = document.getElementById('spotStatus');
+        const spotList = document.getElementById('spotList');
+        const activeSpot = document.getElementById('activeSpot');
+
+        function loadFloors() {
+            axios.get('http://localhost:3000/emergency/floors')
+                .then(res => {
+                    const rows = res.data;
+                    if (!Array.isArray(rows) || rows.length === 0) {
+                        floorSelect.innerHTML = '<option value="">No floors</option>';
+                        return;
+                    }
+                    floorSelect.innerHTML = rows.map(row => `<option value="${row.id}">${row.name}</option>`).join('');
+                })
+                .catch(err => {
+                    console.error('Floors Load Error:', err);
+                    floorSelect.innerHTML = '<option value="">Error loading floors</option>';
+                });
+        }
+
+        function loadSpots() {
+            axios.get('http://localhost:3000/emergency/spots')
+                .then(res => {
+                    const rows = res.data;
+                    if (!Array.isArray(rows) || rows.length === 0) {
+                        spotList.innerHTML = '<p style="color: var(--text-muted);">No safe spots assigned yet.</p>';
+                        return;
+                    }
+
+                    spotList.innerHTML = `
+					<table class="spot-table">
+						<thead>
+							<tr>
+								<th>Floor</th>
+								<th>Location</th>
+								<th>Instructions</th>
+								<th>Updated</th>
+							</tr>
+						</thead>
+						<tbody>
+							${rows.map(row => `
+								<tr>
+									<td>${row.floor || 'Unknown'}</td>
+									<td>${row.location}</td>
+									<td>${row.instructions || '-'}</td>
+									<td>${row.updated_at ? new Date(row.updated_at).toLocaleString() : '-'}</td>
+								</tr>
+							`).join('')}
+						</tbody>
+					</table>
+				`;
+                })
+                .catch(err => {
+                    console.error('Safe Spots Load Error:', err);
+                    spotList.innerHTML = '<p style="color: var(--text-muted);">Failed to load safe spots.</p>';
+                });
+        }
+
+        function loadActiveSpot() {
+            axios.get('http://localhost:3000/emergency/active')
+                .then(res => {
+                    const data = res.data;
+                    if (!data || !data.floor) {
+                        activeSpot.textContent = 'No recent accidents.';
+                        return;
+                    }
+
+                    if (!data.location) {
+                        activeSpot.textContent = `Latest accident on ${data.floor}. No safe spot assigned yet.`;
+                        return;
+                    }
+
+                    activeSpot.textContent = `Latest accident on ${data.floor}. Safe spot: ${data.location}.`;
+                })
+                .catch(err => {
+                    console.error('Active Spot Load Error:', err);
+                    activeSpot.textContent = 'Failed to load active safe spot.';
+                });
+        }
+
+        document.getElementById('saveSpotBtn').addEventListener('click', () => {
+            const floorId = floorSelect.value;
+            const location = document.getElementById('spotLocation').value.trim();
+            const instructions = document.getElementById('spotInstructions').value.trim();
+
+            if (!floorId || !location) {
+                spotStatus.textContent = 'Please select a floor and enter a location.';
+                return;
+            }
+
+            spotStatus.textContent = 'Saving safe spot...';
+
+            axios.post('http://localhost:3000/emergency/spots', {
+                floor_id: floorId,
+                location,
+                instructions
+            })
+                .then(() => {
+                    spotStatus.textContent = 'Safe spot saved.';
+                    document.getElementById('spotLocation').value = '';
+                    document.getElementById('spotInstructions').value = '';
+                    loadSpots();
+                    loadActiveSpot();
+                })
+                .catch(err => {
+                    console.error('Save Safe Spot Error:', err);
+                    spotStatus.textContent = 'Failed to save safe spot.';
+                });
+        });
+
+        loadFloors();
+        loadSpots();
+        loadActiveSpot();
+    </script>
+
 </body>
+
 </html>
