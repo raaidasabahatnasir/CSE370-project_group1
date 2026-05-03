@@ -1,9 +1,385 @@
 <!DOCTYPE html>
+<<<<<<< HEAD
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <title>Accidents</title>
+=======
+<html>
+
+<head>
+    <title>Accidents</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        .factory-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+        }
+
+        .factory-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 12px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            background: #0f172a;
+            border: 1px solid var(--border);
+            padding: 10px;
+            border-radius: 10px;
+            color: white;
+            outline: none;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-top: 16px;
+        }
+
+        .accident-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            font-size: 13px;
+        }
+
+        .accident-table th,
+        .accident-table td {
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .accident-table th {
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            width: min(520px, 90vw);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .modal-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 20px;
+            cursor: pointer;
+        }
+    </style>
+>>>>>>> d0e4b45c5410ca1edc07a118b34380ad2180870b
 </head>
+
 <body>
+<<<<<<< HEAD
+=======
+
+    <div class="container">
+
+        <div class="header">
+            <h1>Accidents</h1>
+        </div>
+
+        <div class="navbar">
+            <a href="/">Overview</a>
+            <a href="/workers">Worker Density</a>
+            <a href="/incidents">Risk Scoring</a>
+            <a href="/accidents" class="active">Accidents</a>
+            <a href="/compliance">Compliance</a>
+            <a href="/emergency">Safe Spots</a>
+            <a href="/training">Training</a>
+        </div>
+
+        <div class="card">
+            <h3>Log an Accident</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="floorSelect">Floor</label>
+                    <select id="floorSelect"></select>
+                </div>
+                <div class="form-group">
+                    <label for="injuryCount">Injuries</label>
+                    <input id="injuryCount" type="number" min="0" value="0">
+                </div>
+                <div class="form-group">
+                    <label for="fatalityCount">Fatalities</label>
+                    <input id="fatalityCount" type="number" min="0" value="0">
+                </div>
+            </div>
+            <div class="form-group" style="margin-top: 12px;">
+                <label for="accidentDesc">Description (optional)</label>
+                <textarea id="accidentDesc" rows="3" placeholder="Add a short note"></textarea>
+            </div>
+            <div class="form-actions">
+                <button class="btn-primary" id="logAccidentBtn" type="button">Log Accident</button>
+                <div id="logStatus" style="font-size: 13px; color: var(--text-muted);"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Injury and Fatality Rates (Per Accident)</h3>
+            <p style="color: var(--text-muted); margin-top: 6px;">Rates are calculated as totals divided by accidents
+                per floor.</p>
+        </div>
+
+        <div id="factoryGrid" class="factory-grid"></div>
+
+        <div class="card">
+            <h3>Recent Accidents</h3>
+            <div id="accidentList"></div>
+        </div>
+
+    </div>
+
+    <div id="spotModal" class="modal-backdrop">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Safe Spot Guidance</div>
+                <button class="modal-close" id="closeSpotModal" type="button">&times;</button>
+            </div>
+            <div id="spotModalBody" style="color: var(--text-muted);"></div>
+        </div>
+    </div>
+
+    <script>
+        const floorSelect = document.getElementById("floorSelect");
+        const grid = document.getElementById("factoryGrid");
+        const logStatus = document.getElementById("logStatus");
+        const accidentList = document.getElementById("accidentList");
+        const spotModal = document.getElementById("spotModal");
+        const spotModalBody = document.getElementById("spotModalBody");
+
+        function openSpotModal(message) {
+            spotModalBody.textContent = message;
+            spotModal.style.display = "flex";
+        }
+
+        function closeSpotModal() {
+            spotModal.style.display = "none";
+        }
+
+        document.getElementById("closeSpotModal").addEventListener("click", closeSpotModal);
+        spotModal.addEventListener("click", (event) => {
+            if (event.target === spotModal) closeSpotModal();
+        });
+
+        function renderSummary(rows) {
+            if (!Array.isArray(rows) || rows.length === 0) {
+                grid.innerHTML = '<div class="card">No accident data available.</div>';
+                return;
+            }
+
+            grid.innerHTML = rows.map(row => {
+                return `
+            <div class="card">
+                <div style="font-size:16px; font-weight:600;">${row.floor}</div>
+				<div class="factory-meta">
+					<span>Accidents: ${row.accident_count}</span>
+					<span>Injuries: ${row.injury_count}</span>
+					<span>Fatalities: ${row.fatality_count}</span>
+				</div>
+
+				<div class="stat-row">
+					<span class="stat-label">Injury rate</span>
+					<span class="text-yellow">${row.injury_rate}</span>
+				</div>
+				<div class="progress">
+					<div class="progress-bar bg-yellow" style="width:${Math.min(100, row.injury_rate * 20)}%"></div>
+				</div>
+
+				<div class="stat-row" style="margin-top:14px;">
+					<span class="stat-label">Fatality rate</span>
+					<span class="text-red">${row.fatality_rate}</span>
+				</div>
+				<div class="progress">
+					<div class="progress-bar bg-red" style="width:${Math.min(100, row.fatality_rate * 20)}%"></div>
+				</div>
+			</div>
+		`;
+            }).join("");
+        }
+
+        function loadSummary() {
+            axios.get("http://localhost:3000/accidents/summary")
+                .then(res => renderSummary(res.data))
+                .catch(err => {
+                    console.error("Accidents Load Error:", err);
+                    grid.innerHTML = '<div class="card">Error loading data. Make sure the backend is running.</div>';
+                });
+        }
+
+        function loadFloors() {
+            axios.get("http://localhost:3000/accidents/floors")
+                .then(res => {
+                    const rows = res.data;
+                    if (!Array.isArray(rows) || rows.length === 0) {
+                        floorSelect.innerHTML = '<option value="">No floors</option>';
+                        return;
+                    }
+                    floorSelect.innerHTML = rows.map(row => `<option value="${row.id}">${row.name}</option>`).join("");
+                })
+                .catch(err => {
+                    console.error("Floors Load Error:", err);
+                    floorSelect.innerHTML = '<option value="">Error loading floors</option>';
+                });
+        }
+
+        function loadAccidentsList() {
+            axios.get("http://localhost:3000/accidents/list")
+                .then(res => {
+                    const rows = res.data;
+                    if (!Array.isArray(rows) || rows.length === 0) {
+                        accidentList.innerHTML = '<p style="color: var(--text-muted);">No accidents logged yet.</p>';
+                        return;
+                    }
+
+                    accidentList.innerHTML = `
+                        <table class="accident-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Floor</th>
+                                    <th>Injuries</th>
+                                    <th>Fatalities</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rows.map(row => `
+                                    <tr>
+                                        <td>${new Date(row.accident_date).toLocaleString()}</td>
+                                        <td>${row.floor || 'Unknown'}</td>
+                                        <td>${row.injury_count}</td>
+                                        <td>${row.fatality_count}</td>
+                                        <td>${row.description || '-'}</td>
+                                    </tr>
+                                `).join("")}
+                            </tbody>
+                        </table>
+                    `;
+                })
+                .catch(err => {
+                    console.error("Accident List Error:", err);
+                    accidentList.innerHTML = '<p style="color: var(--text-muted);">Failed to load accident list.</p>';
+                });
+        }
+
+        document.getElementById("logAccidentBtn").addEventListener("click", () => {
+            const floorId = floorSelect.value;
+            const injuryCount = document.getElementById("injuryCount").value;
+            const fatalityCount = document.getElementById("fatalityCount").value;
+            const description = document.getElementById("accidentDesc").value.trim();
+
+            if (!floorId) {
+                logStatus.textContent = "Please select a floor.";
+                return;
+            }
+
+            logStatus.textContent = "Logging accident...";
+
+            axios.post("http://localhost:3000/accidents/log", {
+                floor_id: floorId,
+                injury_count: injuryCount,
+                fatality_count: fatalityCount,
+                description
+            })
+                .then(() => {
+                    logStatus.textContent = "Accident logged.";
+                    document.getElementById("injuryCount").value = 0;
+                    document.getElementById("fatalityCount").value = 0;
+                    document.getElementById("accidentDesc").value = "";
+                    loadSummary();
+                    loadAccidentsList();
+
+                    axios.get(`http://localhost:3000/emergency/spot/${floorId}`)
+                        .then(res => {
+                            const spot = res.data;
+                            if (!spot || !spot.location) {
+                                openSpotModal("No safe spot assigned for this floor yet.");
+                                return;
+                            }
+
+                            const instructions = spot.instructions ? ` Instructions: ${spot.instructions}` : "";
+                            openSpotModal(`Floor: ${spot.floor}. Safe spot: ${spot.location}.${instructions}`);
+                        })
+                        .catch(err => {
+                            console.error("Safe Spot Lookup Error:", err);
+                            openSpotModal("Failed to load safe spot for this floor.");
+                        });
+                })
+                .catch(err => {
+                    console.error("Log Accident Error:", err);
+                    logStatus.textContent = "Failed to log accident.";
+                });
+        });
+
+        loadFloors();
+        loadSummary();
+        loadAccidentsList();
+    </script>
+
+>>>>>>> d0e4b45c5410ca1edc07a118b34380ad2180870b
 </body>
+
 </html>

@@ -1,17 +1,14 @@
 -- Database: garment_factory_safety
 CREATE DATABASE IF NOT EXISTS garment_factory_safety;
 USE garment_factory_safety;
-
 -- Table: users
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
-    role VARCHAR(50) DEFAULT 'Manager',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
 -- Table: floors
 CREATE TABLE IF NOT EXISTS floors (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -20,7 +17,6 @@ CREATE TABLE IF NOT EXISTS floors (
     capacity INT NOT NULL,
     current_workers INT DEFAULT 0
 );
-
 -- Table: workers
 CREATE TABLE IF NOT EXISTS workers (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -32,7 +28,6 @@ CREATE TABLE IF NOT EXISTS workers (
     status VARCHAR(50) DEFAULT 'Active',
     FOREIGN KEY (floor_id) REFERENCES floors(id)
 );
-
 -- Table: incidents
 CREATE TABLE IF NOT EXISTS incidents (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -43,17 +38,35 @@ CREATE TABLE IF NOT EXISTS incidents (
     incident_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (floor_id) REFERENCES floors(id)
 );
-
+-- Table: accidents
+CREATE TABLE IF NOT EXISTS accidents (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    floor_id INT NOT NULL,
+    injury_count INT DEFAULT 0,
+    fatality_count INT DEFAULT 0,
+    description TEXT,
+    accident_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (floor_id) REFERENCES floors(id)
+);
+-- Table: safe_spots
+CREATE TABLE IF NOT EXISTS safe_spots (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    floor_id INT NOT NULL UNIQUE,
+    location VARCHAR(255) NOT NULL,
+    instructions TEXT,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (floor_id) REFERENCES floors(id)
+);
 -- Seed Data for Floors
-INSERT INTO floors (name, department, capacity, current_workers) VALUES 
-('Ground Floor', 'Cutting Department', 5, 0),
-('First Floor', 'Sewing Department', 5, 0),
-('Second Floor', 'Finishing Department', 5, 0),
-('Third Floor', 'Packaging & Storage', 5, 0);
-
+INSERT INTO floors (name, department, capacity, current_workers)
+VALUES ('Ground Floor', 'Cutting Department', 5, 0),
+    ('First Floor', 'Sewing Department', 5, 0),
+    ('Second Floor', 'Finishing Department', 5, 0),
+    ('Third Floor', 'Packaging & Storage', 5, 0);
 -- Seed Default Admin (Password: admin123)
-INSERT INTO users (name, email, password, role) VALUES 
-('System Admin', 'admin@factory.com', '$2b$10$Vk5nA.nGJjU398gdFgWuQu.B9mUKE0H7O9G4/aumtxYDMtvNyTRPS', 'Admin');
-
-
-
+INSERT INTO users (name, email, password)
+VALUES (
+        'System Admin',
+        'admin@factory.com',
+        '$2b$10$Vk5nA.nGJjU398gdFgWuQu.B9mUKE0H7O9G4/aumtxYDMtvNyTRPS'
+    );

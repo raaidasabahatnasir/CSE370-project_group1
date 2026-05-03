@@ -1,9 +1,92 @@
 <!DOCTYPE html>
+<<<<<<< HEAD
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <title>Compliance</title>
+=======
+<html>
+
+<head>
+  <title>Safe Score</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+>>>>>>> d0e4b45c5410ca1edc07a118b34380ad2180870b
 </head>
+
 <body>
+<<<<<<< HEAD
+=======
+
+  <div class="container">
+
+    <div class="header">
+      <h1>Safe Score</h1>
+    </div>
+
+    <div class="navbar">
+      <a href="/">Overview</a>
+      <a href="/workers">Worker Density</a>
+      <a href="/incidents">Risk Scoring</a>
+      <a href="/accidents">Accidents</a>
+      <a href="/compliance" class="active">Compliance</a>
+      <a href="/emergency">Safe Spots</a>
+      <a href="/training">Training</a>
+    </div>
+
+    <div class="card">
+      <h3>Risk Score</h3>
+      <div id="risk">Loading safety metrics...</div>
+    </div>
+
+  </div>
+
+  <script>
+    axios.get("http://localhost:3000/compliance/risk")
+      .then(res => {
+        const rows = res.data;
+        const riskEl = document.getElementById("risk");
+
+        if (!Array.isArray(rows) || rows.length === 0) {
+          riskEl.innerHTML = `<p style="color:var(--text-muted)">No compliance data available.</p>`;
+          return;
+        }
+
+        const totalScore = rows.reduce((sum, row) => sum + (Number(row.score) || 0), 0);
+        const avgScore = Math.round(totalScore / rows.length);
+
+        const itemsHtml = rows.map(row => {
+          const score = Math.max(0, Math.min(100, Math.round(Number(row.score) || 0)));
+          const level = (row.risk_level || "Low").toLowerCase();
+          const barClass = level === "high" ? "bg-red" : level === "medium" ? "bg-yellow" : "bg-green";
+          const textClass = level === "high" ? "text-red" : level === "medium" ? "text-yellow" : "text-green";
+
+          return `
+      <div style="margin: 18px 0;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+          <strong>${row.floor || "Unknown"}</strong>
+          <span class="${textClass}">${row.risk_level || "Low"}</span>
+        </div>
+        <div class="progress">
+          <div class="progress-bar ${barClass}" style="width:${score}%"></div>
+        </div>
+        <div style="font-size:12px; color:var(--text-muted); margin-top:6px;">${score}% capacity</div>
+      </div>
+    `;
+        }).join("");
+
+        riskEl.innerHTML = `
+    <div class="card-title">Average Compliance Score</div>
+    <div style="font-size: 32px; margin: 12px 0;">${avgScore} / 100</div>
+    ${itemsHtml}
+  `;
+      })
+      .catch(err => {
+        console.error("Compliance Load Error:", err);
+        document.getElementById("risk").innerHTML = `<p style="color:red">Error loading data. Make sure the backend is running.</p>`;
+      });
+  </script>
+>>>>>>> d0e4b45c5410ca1edc07a118b34380ad2180870b
 </body>
+
 </html>
