@@ -12,8 +12,22 @@ router.get("/", (req, res) => {
 
 // GET all floors density data from MySQL
 router.get("/density", (req, res) => {
-  const query = "SELECT name as floor, current_workers, capacity, (current_workers / capacity * 100) as density FROM floors";
-  
+  const query = `
+    SELECT
+      f.name as floor,
+      f.current_workers,
+      f.capacity,
+      (f.current_workers / f.capacity * 100) as density,
+      SUM(CASE WHEN a.accident_date >= DATE_SUB(CURRENT_DATE, INTERVAL 12 MONTH) THEN 1 ELSE 0 END) as accident_count,
+      (CASE WHEN f.current_workers > f.capacity THEN 10 ELSE 0 END)
+        + (SUM(CASE WHEN a.accident_date >= DATE_SUB(CURRENT_DATE, INTERVAL 12 MONTH) THEN 1 ELSE 0 END) * 10)
+        as risk_score
+    FROM floors f
+    LEFT JOIN accidents a ON a.floor_id = f.id
+    GROUP BY f.id, f.name, f.current_workers, f.capacity
+    ORDER BY f.name
+  `;
+
   db.query(query, (err, results) => {
     if (err) {
       console.error("Database error:", err);
