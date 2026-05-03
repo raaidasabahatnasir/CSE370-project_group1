@@ -62,4 +62,28 @@ router.post("/api/add", (req, res) => {
   });
 });
 
+// API: Remove worker
+router.delete("/api/remove/:id", (req, res) => {
+  const workerId = req.params.id;
+
+  // 1. Get worker's floor_id first
+  db.query("SELECT floor_id FROM workers WHERE id = ?", [workerId], (err, results) => {
+    if (err) return res.status(500).json({ error: "Database error: " + err.message });
+    if (results.length === 0) return res.status(404).json({ error: "Worker not found" });
+
+    const floorId = results[0].floor_id;
+
+    // 2. Delete the worker
+    db.query("DELETE FROM workers WHERE id = ?", [workerId], (err) => {
+      if (err) return res.status(500).json({ error: "Failed to remove worker: " + err.message });
+
+      // 3. Decrement current_workers on the floor
+      db.query("UPDATE floors SET current_workers = GREATEST(0, current_workers - 1) WHERE id = ?", [floorId], (err) => {
+        if (err) console.error("Failed to update floor count:", err);
+        res.json({ message: "Worker removed successfully" });
+      });
+    });
+  });
+});
+
 module.exports = router;
