@@ -1,6 +1,6 @@
 # CSE370-project_group1
 GROUP 1 REPORT
-file:///C:/Users/sadia%20afroz/Downloads/Garment%20Factory%20Safety.pdf
+https://drive.google.com/file/d/1_ZfJEMLw6fy01SkKRVs32YUINlnOptE7/view?usp=sharing
 
 Google doc link project features:
 https://docs.google.com/document/d/1Iyt71hM4sOlHGLLt6M2qxs-HEdriF1vggF789H5Qo4Q/edit?tab=t.0
